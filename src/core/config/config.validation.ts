@@ -71,4 +71,46 @@ export const configValidationSchema = Joi.object<Config>({
     .default('lax'),
   COOKIE_SECURE: Joi.boolean().optional(),
   COOKIE_DOMAIN: Joi.string().allow('').optional(),
+  AUTH_EMAIL_CHANGE_OTP_TTL_SECONDS: Joi.number()
+    .integer()
+    .min(1)
+    .optional()
+    .default(600),
+  AUTH_EMAIL_CHANGE_OTP_LENGTH: Joi.number()
+    .integer()
+    .min(4)
+    .max(8)
+    .optional()
+    .default(6),
+  AUTH_EMAIL_CHANGE_OTP_MAX_ATTEMPTS: Joi.number()
+    .integer()
+    .min(1)
+    .optional()
+    .default(5),
+  AUTH_EMAIL_CHANGE_OTP_RESEND_SECONDS: Joi.number()
+    .integer()
+    .min(1)
+    .optional()
+    .default(60),
+  AUTH_ACCOUNT_DELETION_OTP_TTL_SECONDS: Joi.number()
+    .integer()
+    .min(1)
+    .optional()
+    .default(600),
+  AUTH_ACCOUNT_DELETION_OTP_LENGTH: Joi.number()
+    .integer()
+    .min(4)
+    .max(8)
+    .optional()
+    .default(6),
+  AUTH_ACCOUNT_DELETION_OTP_MAX_ATTEMPTS: Joi.number()
+    .integer()
+    .min(1)
+    .optional()
+    .default(5),
+  AUTH_ACCOUNT_DELETION_OTP_RESEND_SECONDS: Joi.number()
+    .integer()
+    .min(1)
+    .optional()
+    .default(60),
 });

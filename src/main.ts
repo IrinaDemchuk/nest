@@ -11,6 +11,7 @@ import { join } from 'node:path';
 
 import { AppModule } from './core/app/app.module';
 import { ConfigService } from '@/core/config/config.service';
+import fastifyMultipart from '@fastify/multipart';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -49,6 +50,10 @@ async function bootstrap() {
   await app.register(fastifyStatic, {
     root: join(process.cwd(), 'uploads'),
     prefix: '/uploads/',
+  });
+
+  await app.register(fastifyMultipart, {
+    limits: { fileSize: 2 * 1024 * 1024 },
   });
 
   const port = configService.get('PORT');

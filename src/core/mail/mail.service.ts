@@ -56,4 +56,18 @@ export class MailService {
 
     await this.sendMail({ to, subject, text, html });
   }
+
+  async sendEmailChangeOtp(to: string, code: string): Promise<void> {
+    const subject = 'Confirm your email change';
+    const text = `Your confirmation code is ${code}. It expires in 10 minutes.`;
+    const html = `<p>Your confirmation code is <strong>${code}</strong>.</p><p>It expires in 10 minutes.</p>`;
+    await this.sendMail({ to, subject, text, html });
+  }
+
+  async sendAccountDeletionOtp(to: string, code: string): Promise<void> {
+    const subject = 'Confirm account deletion';
+    const text = `Your confirmation code is ${code}. It expires in 10 minutes.`;
+    const html = `<p>Your confirmation code is <strong>${code}</strong>.</p><p>It expires in 10 minutes.</p>`;
+    await this.sendMail({ to, subject, text, html });
+  }
 }
