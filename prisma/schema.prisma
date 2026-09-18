@@ -16,6 +16,8 @@ enum EmailOtpPurpose {
   REGISTRATION
   PASSWORD_RESET
   LOGIN
+  EMAIL_CHANGE
+  ACCOUNT_DELETION
 }
 
 enum LoginAttemptStatus {
@@ -32,11 +34,21 @@ model User {
   isActive        Boolean        @default(true)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  photoFilename   String?
+  displayName     String?
+  firstName       String?
+  lastName        String?
+  phone           String?
+  bio             String?
+  locale          String?
   emailOtps       EmailOtp[]
   userRoles       UserRole[]
   loginAttempts   LoginAttempt[]
-  photoFilename   String?
 
+  @@index([createdAt, id])
+  @@index([deletedAt])
+  @@index([isActive])
   @@map("users")
 }
 
@@ -45,6 +57,7 @@ model EmailOtp {
   userId            String          @db.Uuid
   purpose           EmailOtpPurpose
   codeHash          String
+  destinationEmail  String?
   expiresAt         DateTime
   attempts          Int             @default(0)
   maxAttempts       Int             @default(5)
