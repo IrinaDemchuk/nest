@@ -53,7 +53,7 @@ async function bootstrap() {
   });
 
   await app.register(fastifyMultipart, {
-    limits: { fileSize: 2 * 1024 * 1024 },
+    limits: { fileSize: 20 * 1024 * 1024 },
   });
 
   const port = configService.get('PORT');

@@ -12,7 +12,7 @@ import {
 import { hash, verify } from 'argon2';
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { RbacService } from '@/modules/rbac/rbac.service';
-import { Prisma, type User } from '../../../generated/prisma/client';
+import { Prisma, type User } from '@/generated/prisma/client';
 import {
   patchAllowlist,
   photoUrl,

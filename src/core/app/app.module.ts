@@ -16,6 +16,9 @@ import { MailModule } from '../mail/mail.module';
 import { RbacModule } from '@/modules/rbac/rbac.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { ConvertModule } from '@/modules/convert/convert.module';
+import { ImagesModule } from '@/modules/images/images.module';
+import { TransformationsModule } from '@/modules/transformations/transformations.module';
 
 @Module({
   imports: [
@@ -30,6 +33,9 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
      *
      */
     UsersModule,
+    ConvertModule,
+    ImagesModule,
+    TransformationsModule,
     AuthModule,
     RbacModule,
   ],
