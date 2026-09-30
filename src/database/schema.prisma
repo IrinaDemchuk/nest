@@ -26,6 +26,11 @@ enum LoginAttemptStatus {
   EXPIRED
 }
 
+enum ConversionStatus {
+  SUCCESS
+  ERROR
+}
+
 model User {
   id              String         @id @default(uuid()) @db.Uuid
   email           String         @unique
@@ -45,6 +50,7 @@ model User {
   emailOtps       EmailOtp[]
   userRoles       UserRole[]
   loginAttempts   LoginAttempt[]
+  conversionJobs  ConversionJob[]
 
   @@index([createdAt, id])
   @@index([deletedAt])
@@ -132,6 +138,29 @@ model SystemSetting {
   updatedAt DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+model ConversionJob {
+  id               String           @id @default(uuid()) @db.Uuid
+  userId           String           @db.Uuid
+  kind             String
+  sourceFormat     String
+  targetFormat     String
+  inputFilename    String?
+  inputBytes       Int
+  outputBytes      Int?
+  status           ConversionStatus
+  errorCode        String?
+  persistRequested Boolean          @default(false)
+  outputPath       String?
+  durationMs       Int
+  createdAt        DateTime         @default(now())
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, kind, createdAt])
+  @@index([userId, status, createdAt])
+  @@map("conversion_jobs")
 }
 
 model LoginAttempt {

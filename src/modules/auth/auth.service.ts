@@ -15,7 +15,7 @@ import { ConfigService } from '@/core/config/config.service';
 import { MailService } from '@/core/mail/mail.service';
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { UsersService } from '@/modules/users/users.service';
-import { EmailOtpPurpose } from '../../../generated/prisma/client';
+import { EmailOtpPurpose } from '@/generated/prisma/client';
 import { ConfirmLoginOtpDto } from './dto/confirm-login.dto';
 import { ConfirmRegistrationDto } from './dto/confirm-registration.dto';
 import { LoginDto } from './dto/login.dto';

@@ -55,8 +55,10 @@ pids
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-/generated/prisma
+/src/generated
 
 /uploads/**
 !/uploads/avatars/
 !/uploads/avatars/.gitkeep
+!/uploads/conversions/
+!/uploads/conversions/.gitkeep
