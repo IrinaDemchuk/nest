@@ -11,6 +11,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
+import { readFileHead } from '@/common/spill-stream';
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { CodecRegistry } from './codecs/codec-registry';
 import { ConvertError } from './codecs/convert-error';
@@ -26,7 +27,8 @@ import { formatSaveLog } from '@/modules/storage/save-flag';
 
 export interface ConvertInput {
   userId: string;
-  buffer: Buffer;
+  path: string;
+  byteLength: number;
   filename?: string;
   targetFormat: string;
   persist: boolean;
@@ -54,7 +56,7 @@ export class ConvertService {
     const started = Date.now();
     const targetFormat = this.parseTarget(input.targetFormat);
     const persist = input.persist;
-    const inputBytes = input.buffer.byteLength;
+    const inputBytes = input.byteLength;
 
     let sourceFormat: ConvertFormat | 'unknown' = 'unknown';
     let errorCode: string | undefined;
@@ -65,7 +67,8 @@ export class ConvertService {
         throw new ConvertError('PARSE_ERROR', 'File is empty');
       }
 
-      const detected = this.codecs.detect(input.buffer, input.filename);
+      const head = await readFileHead(input.path, 8192);
+      const detected = this.codecs.detect(head, input.filename);
       if (!detected) {
         throw new ConvertError(
           'UNSUPPORTED_FORMAT',
@@ -90,7 +93,7 @@ export class ConvertService {
       }
 
       const output = await this.runInWorker(
-        input.buffer,
+        input.path,
         sourceFormat,
         targetFormat,
         this.settings.getTimeoutMs(),
@@ -212,14 +215,14 @@ export class ConvertService {
   }
 
   private runInWorker(
-    input: Buffer,
+    inputPath: string,
     sourceFormat: ConvertFormat,
     targetFormat: ConvertFormat,
     timeoutMs: number,
   ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const worker = new Worker(join(__dirname, 'convert.worker.js'), {
-        workerData: { input, sourceFormat, targetFormat },
+        workerData: { inputPath, sourceFormat, targetFormat },
       });
 
       const timer = setTimeout(() => {

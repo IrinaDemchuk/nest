@@ -25,6 +25,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   roles: string[];
+  tv: number;
 }
 
 @Injectable()
@@ -185,7 +186,12 @@ export class AuthService {
 
     if (!isConfirmationRequired) {
       const userRoles = user.userRoles.map((r) => r.role.name);
-      return this.generateTokens(user.id, user.email, userRoles);
+      return this.generateTokens(
+        user.id,
+        user.email,
+        userRoles,
+        user.tokenVersion,
+      );
     }
 
     const otp = this.generateOtp(6);
@@ -261,7 +267,12 @@ export class AuthService {
     });
 
     const userRoles = attempt.user.userRoles.map((r) => r.role.name);
-    return this.generateTokens(attempt.user.id, attempt.user.email, userRoles);
+    return this.generateTokens(
+      attempt.user.id,
+      attempt.user.email,
+      userRoles,
+      attempt.user.tokenVersion,
+    );
   }
 
   async refreshToken(refreshToken: string | undefined) {
@@ -286,8 +297,18 @@ export class AuthService {
         throw new UnauthorizedException('User no longer active');
       }
 
+      if (payload.tv !== user.tokenVersion) {
+        this.logger.warn('Refresh failed: revoked');
+        throw new UnauthorizedException('Invalid or expired refresh token');
+      }
+
       const userRoles = user.userRoles.map((ur) => ur.role.name);
-      return this.generateTokens(user.id, user.email, userRoles);
+      return this.generateTokens(
+        user.id,
+        user.email,
+        userRoles,
+        user.tokenVersion,
+      );
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
@@ -297,8 +318,55 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(userId: string, email: string, roles: string[]) {
-    const payload: JwtPayload = { sub: userId, email, roles };
+  async revokeSession(
+    accessToken: string | undefined,
+    refreshToken: string | undefined,
+  ): Promise<void> {
+    const userId =
+      (await this.userIdFromToken(accessToken, 'JWT_SECRET')) ??
+      (await this.userIdFromToken(refreshToken, 'JWT_REFRESH_SECRET'));
+    if (!userId) {
+      return;
+    }
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { tokenVersion: { increment: 1 } },
+      });
+    } catch {
+      this.logger.warn(`Logout revoke skipped for userId=${userId}`);
+    }
+  }
+
+  private async userIdFromToken(
+    token: string | undefined,
+    secretKey: 'JWT_SECRET' | 'JWT_REFRESH_SECRET',
+  ): Promise<string | undefined> {
+    if (!token) {
+      return undefined;
+    }
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        secret: String(this.config.get(secretKey)),
+      });
+      return payload.sub || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async generateTokens(
+    userId: string,
+    email: string,
+    roles: string[],
+    tokenVersion: number,
+  ) {
+    const payload: JwtPayload = {
+      sub: userId,
+      email,
+      roles,
+      tv: tokenVersion,
+    };
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: String(this.config.get('JWT_SECRET')),

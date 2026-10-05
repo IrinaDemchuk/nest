@@ -10,6 +10,7 @@ import {
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { MultipartFields } from '@fastify/multipart';
+import { removeSpill, spillStream } from '@/common/spill-stream';
 import { ImagesService } from './images.service';
 import { IMAGE_FORMATS, IMAGE_PAIRS } from './image.types';
 import { parseSaveFlag } from '@/modules/storage/save-flag';
@@ -41,31 +42,36 @@ export class ImagesController {
     if (!file) {
       throw new BadRequestException('file is required');
     }
-    const buffer = await file.toBuffer();
-    const targetFormat = readField(file.fields, 'targetFormat');
-    if (!targetFormat) {
-      throw new BadRequestException('targetFormat is required');
+    const spilled = await spillStream(file.file);
+    try {
+      const targetFormat = readField(file.fields, 'targetFormat');
+      if (!targetFormat) {
+        throw new BadRequestException('targetFormat is required');
+      }
+
+      const result = await this.imagesService.convert({
+        userId: request.user.userId,
+        path: spilled.path,
+        byteLength: spilled.bytes,
+        filename: file.filename,
+        targetFormat,
+        quality: readOptionalInt(file.fields, 'quality'),
+        width: readOptionalInt(file.fields, 'width'),
+        height: readOptionalInt(file.fields, 'height'),
+        background: readField(file.fields, 'background'),
+        save: parseSaveFlag(readField(file.fields, 'save')),
+      });
+
+      return reply
+        .header('Content-Type', result.contentType)
+        .header(
+          'Content-Disposition',
+          `attachment; filename="${result.downloadName}"`,
+        )
+        .send(result.buffer);
+    } finally {
+      await removeSpill(spilled.dir);
     }
-
-    const result = await this.imagesService.convert({
-      userId: request.user.userId,
-      buffer,
-      filename: file.filename,
-      targetFormat,
-      quality: readOptionalInt(file.fields, 'quality'),
-      width: readOptionalInt(file.fields, 'width'),
-      height: readOptionalInt(file.fields, 'height'),
-      background: readField(file.fields, 'background'),
-      save: parseSaveFlag(readField(file.fields, 'save')),
-    });
-
-    return reply
-      .header('Content-Type', result.contentType)
-      .header(
-        'Content-Disposition',
-        `attachment; filename="${result.downloadName}"`,
-      )
-      .send(result.buffer);
   }
 }
 

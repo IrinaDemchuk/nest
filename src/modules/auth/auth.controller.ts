@@ -2,6 +2,7 @@ import { Body, Controller, Post, Req, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import {
+  ACCESS_TOKEN_COOKIE,
   AuthCookiesService,
   REFRESH_TOKEN_COOKIE,
 } from './auth-cookies.service';
@@ -89,7 +90,14 @@ export class AuthController {
   @Public()
   @Post('logout')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  logout(@Res({ passthrough: true }) reply: FastifyReply) {
+  async logout(
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    await this.authService.revokeSession(
+      request.cookies?.[ACCESS_TOKEN_COOKIE],
+      request.cookies?.[REFRESH_TOKEN_COOKIE],
+    );
     this.authCookies.clearAuthCookies(reply);
     return { loggedOut: true };
   }

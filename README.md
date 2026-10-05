@@ -1,6 +1,6 @@
 # Backend Template
 
-NestJS backend project template. HTTP kernel is **Fastify** (`@nestjs/platform-fastify`), not Express — use Fastify plugins and types (`NestFastifyApplication`, `app.register(...)`) in `src/main.ts`. Compression (`@fastify/compress`) and cookies (`@fastify/cookie`) are already registered.
+NestJS backend project template. HTTP kernel is **Fastify** (`@nestjs/platform-fastify`), not Express — use Fastify plugins and types (`NestFastifyApplication`, `app.register(...)`) in `src/main.ts`. Compression (`@fastify/compress`), cookies (`@fastify/cookie`), and security headers (`@fastify/helmet`) are already registered.
 
 ## Scripts
 
@@ -19,41 +19,34 @@ npm run test:e2e     # E2E tests
 src/
 ├── core/
 │   ├── config/      # App configuration (env variables)
-│   ├── database/    # TypeORM + PostgreSQL connection
+│   ├── prisma/      # Prisma client
 │   ├── health/      # Health check endpoints
 │   └── app/         # Root module
-├── database/        # TypeORM CLI data-source and migrations
+├── database/        # Prisma schema and migrations
 ├── modules/         # Feature modules
 └── main.ts          # Entry point
 ```
 
 ## Database
 
-PostgreSQL and TypeORM are already wired in. Use them for new modules — no extra setup.
+PostgreSQL is accessed only through Prisma. Inject `PrismaService` from `src/core/prisma`.
 
 - **Local Postgres:** `docker compose up -d` (image and credentials from `.env` / `.env.example`)
-- **Connection:** `DatabaseModule` (`src/core/database`) is imported in `AppModule`
-- **Entities:** any `*.entity.ts` under `src/` is auto-loaded
-- **Repositories:** `TypeOrmModule.forFeature([YourEntity])` in a feature module, then `@InjectRepository(YourEntity)`
-- **Transactions:** `@Transactional()` from `typeorm-transactional` (context is initialized in `main.ts`)
-- **Schema:** migrations in `src/database/migrations/`. `POSTGRES_SYNCHRONIZE` is `false` by default — do not rely on auto-sync
+- **Schema:** `src/database/schema.prisma`
+- **Migrations:** `src/database/migrations/`
 
 ```bash
-npm run migration:generate   # Generate from entity changes
-npm run migration:run        # Apply pending migrations
-npm run migration:revert     # Roll back the last migration
-npm run migration:show       # List applied / pending
+npm run prisma:migrate    # Create and apply a migration
+npm run prisma:generate   # Regenerate the Prisma client
 ```
-
-CLI uses `src/database/data-source.ts`. At runtime, Nest uses the DataSource from `DatabaseModule`. If `POSTGRES_MIGRATIONS_RUN=true`, pending migrations also run on app start.
 
 ## Libraries
 
 | Purpose       | Library                  |
 |---------------|--------------------------|
 | HTTP          | Fastify (`@nestjs/platform-fastify`) |
-| Validation    | Joi                      |
-| ORM           | TypeORM (`@nestjs/typeorm`) |
+| Validation    | class-validator          |
+| ORM           | Prisma (`@prisma/client`) |
 | Database      | PostgreSQL (`pg`)        |
 
 ## Core Modules
@@ -61,7 +54,7 @@ CLI uses `src/database/data-source.ts`. At runtime, Nest uses the DataSource fro
 | Purpose       | Module           |
 |---------------|-----------------|
 | Configuration | `ConfigModule`  |
-| Database      | `DatabaseModule` |
+| Database      | `PrismaModule`  |
 | Health Check  | `HealthModule`  |
 
 ## Adding a Module
