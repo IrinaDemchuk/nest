@@ -9,10 +9,7 @@ export type ImageWorkerResult =
 async function main() {
   const data = workerData as ImageRunRequest;
   try {
-    const output = await runImage({
-      ...data,
-      input: Buffer.from(data.input),
-    });
+    const output = await runImage(data);
     parentPort?.postMessage({ ok: true, output } satisfies ImageWorkerResult);
   } catch (error) {
     const result: ImageWorkerResult =

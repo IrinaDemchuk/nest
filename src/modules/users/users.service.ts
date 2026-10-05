@@ -274,6 +274,10 @@ export class UsersService {
 
     const data: Record<string, unknown> = Object.fromEntries(requested);
 
+    if (data.isActive === false && user.isActive) {
+      data.tokenVersion = { increment: 1 };
+    }
+
     if (typeof data.email === 'string') {
       const email = this.normalizeEmail(data.email);
       data.email = email;
@@ -503,6 +507,7 @@ export class UsersService {
         data: {
           email: newEmail,
           emailVerifiedAt: new Date(),
+          tokenVersion: { increment: 1 },
         },
       }),
     ]);
@@ -702,6 +707,7 @@ export class UsersService {
           bio: null,
           locale: null,
           photoFilename: null,
+          tokenVersion: { increment: 1 },
         },
       }),
       this.prisma.userRole.deleteMany({ where: { userId } }),

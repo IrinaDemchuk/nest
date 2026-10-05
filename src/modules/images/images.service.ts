@@ -11,6 +11,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
+import { readFileHead } from '@/common/spill-stream';
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { FileStorage, StorageError } from '@/modules/storage/file-storage';
 import { formatSaveLog } from '@/modules/storage/save-flag';
@@ -30,7 +31,8 @@ import {
 
 export interface ImageConvertInput {
   userId: string;
-  buffer: Buffer;
+  path: string;
+  byteLength: number;
   filename?: string;
   targetFormat: string;
   quality?: number;
@@ -60,7 +62,7 @@ export class ImagesService {
   async convert(input: ImageConvertInput): Promise<ImageConvertOutput> {
     const started = Date.now();
     const save = input.save;
-    const inputBytes = input.buffer.byteLength;
+    const inputBytes = input.byteLength;
     let sourceFormat = 'unknown';
     let targetFormat = input.targetFormat;
     let jobId: string | undefined;
@@ -70,7 +72,8 @@ export class ImagesService {
         throw new ImageError('PARSE_ERROR', 'File is empty');
       }
 
-      const detected = sniffImage(input.buffer, input.filename);
+      const head = await readFileHead(input.path, 256 * 1024);
+      const detected = sniffImage(head, input.filename);
       if (!detected) {
         throw new ImageError('UNSUPPORTED_FORMAT', 'Unsupported source format');
       }
@@ -91,7 +94,7 @@ export class ImagesService {
 
       const output = await this.runInWorker(
         {
-          input: input.buffer,
+          input: input.path,
           sourceFormat: detected,
           targetFormat: rasterTarget,
           quality: options.quality,

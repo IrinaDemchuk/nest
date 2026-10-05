@@ -1,4 +1,6 @@
+import './configure-fonts';
 import sharpImport from 'sharp';
+import { readFileStream } from '../../common/spill-stream';
 import { ImageError } from './image-error';
 import {
   DEFAULT_SVG_SIZE,
@@ -27,12 +29,12 @@ interface SharpPipeline {
 }
 
 const sharp = sharpImport as (
-  input: Buffer,
+  input: Buffer | string,
   options?: SharpInputOptions,
 ) => SharpPipeline;
 
 export interface ImageRunRequest {
-  input: Buffer;
+  input: Buffer | string;
   sourceFormat: ImageFormat;
   targetFormat: ImageRasterFormat;
   quality: number;
@@ -57,9 +59,19 @@ const SVG_UNSAFE: RegExp[] = [
 
 export async function runImage(request: ImageRunRequest): Promise<Buffer> {
   if (request.sourceFormat === 'svg') {
-    return rasterizeSvg(request);
+    return rasterizeSvg({
+      ...request,
+      input: await asBuffer(request.input),
+    });
   }
   return convertRaster(request);
+}
+
+async function asBuffer(input: Buffer | string): Promise<Buffer> {
+  if (typeof input === 'string') {
+    return readFileStream(input);
+  }
+  return input;
 }
 
 export function assertSvgSafe(svg: string): void {
@@ -94,7 +106,9 @@ async function convertRaster(request: ImageRunRequest): Promise<Buffer> {
   }
 }
 
-async function rasterizeSvg(request: ImageRunRequest): Promise<Buffer> {
+async function rasterizeSvg(
+  request: Omit<ImageRunRequest, 'input'> & { input: Buffer },
+): Promise<Buffer> {
   const svg = decodeSvg(request.input);
   assertSvgSafe(svg);
   const size = resolveOutputSize(

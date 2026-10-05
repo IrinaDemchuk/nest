@@ -5,6 +5,7 @@ import {
 } from '@nestjs/platform-fastify';
 import compression from '@fastify/compress';
 import fastifyCookie from '@fastify/cookie';
+import helmet from '@fastify/helmet';
 import { ValidationPipe } from '@nestjs/common';
 import fastifyStatic from '@fastify/static';
 import { join } from 'node:path';
@@ -18,6 +19,21 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
+
+  await app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'none'"],
+        baseUri: ["'none'"],
+        frameAncestors: ["'none'"],
+        formAction: ["'none'"],
+      },
+    },
+    hsts: {
+      maxAge: 15_552_000,
+      includeSubDomains: true,
+    },
+  });
 
   await app.register(compression);
 

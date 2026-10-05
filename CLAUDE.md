@@ -6,11 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A NestJS monolith backend. HTTP kernel is **Fastify** (`@nestjs/platform-fastify`), not Express — use Fastify plugins/types (`NestFastifyApplication`, `app.register(...)`) in `src/main.ts`. Compression, cookies, static file serving (`/uploads/`), and multipart upload handling are registered there as Fastify plugins.
 
-Persistence is **Prisma** (`@prisma/client` + `@prisma/adapter-pg`), not TypeORM. `README.md` at the repo root describes an older TypeORM-based template layout (`DatabaseModule`, `*.entity.ts`, `src/core/database`) — that module no longer exists in `src/`; ignore that part of the README. The real DB access point is `PrismaService` (`src/core/prisma/prisma.service.ts`), injected wherever Prisma is needed.
-
-`package.json` still has `typeorm`, `typeorm-transactional`, and `migration:*` scripts pointing at `src/database/data-source.ts` (a standalone TypeORM `DataSource`) — these are vestigial from the original template and are not part of the live data path. The actual schema and migrations are Prisma's, under `src/database/schema.prisma` and `src/database/migrations/`.
-
-**Known gotcha:** `prisma.config.ts` at the repo root still points to `prisma/schema.prisma` / `prisma/migrations`, but the schema and migrations now live at `src/database/schema.prisma` / `src/database/migrations/`. Update `prisma.config.ts`'s `schema` and `migrations.path` before running any `prisma:*` script, or those commands will fail to find the schema.
+Persistence is **Prisma** (`@prisma/client` + `@prisma/adapter-pg`). The DB access point is `PrismaService` (`src/core/prisma/prisma.service.ts`). Schema and migrations live at `src/database/schema.prisma` and `src/database/migrations/`. `prisma.config.ts` already points at those paths. Do not add a second ORM or a second migration tool.
 
 ## Commands
 
@@ -89,5 +85,4 @@ Format-conversion module (`src/modules/convert/`) between CSV/JSON/XML/YAML, bui
 ## Conventions
 
 - Import alias `@/*` maps to `src/*` (see `tsconfig.json`); prefer it over deep relative paths for cross-module imports.
-- DTOs use `class-validator`/`class-transformer` with a global `ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true })` — unlisted fields in request bodies are stripped/rejected, not silently ignored.
-- `zod`/`nestjs-zod` are dependencies but not yet used anywhere in `src/` — don't assume Zod schemas exist for a module unless you find one.
+- DTOs and environment variables use `class-validator`/`class-transformer`. HTTP bodies go through a global `ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true })`. Env validation is `validateConfig` in `src/core/config/config.validation.ts`. Do not add Joi, Zod, or another schema library.

@@ -21,9 +21,6 @@ export interface Config {
   POSTGRES_USER: string;
   POSTGRES_PASSWORD: string;
   POSTGRES_DB: string;
-  POSTGRES_SYNCHRONIZE?: boolean;
-  POSTGRES_LOGGING?: boolean;
-  POSTGRES_MIGRATIONS_RUN?: boolean;
   /**
    * Prisma connection URL
    */

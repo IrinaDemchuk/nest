@@ -11,6 +11,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   roles: string[];
+  tv: number;
 }
 
 export const INACTIVE_USER_MESSAGE = 'inactive_user';
@@ -40,6 +41,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException(INACTIVE_USER_MESSAGE);
+    }
+
+    if (payload.tv !== user.tokenVersion) {
+      throw new UnauthorizedException('Token has been revoked');
     }
 
     return {
